@@ -15,8 +15,13 @@ from pathlib import Path
 import cv2
 import numpy as np
 from common import (
-    DATA_ROOT, write_task, COLORS, fit_square, overlay_mask, loop_frames,
+    DATA_ROOT, write_task, COLORS, fit_square, overlay_mask,
 )
+
+
+def loop_frames(frame, n: int):
+    """Repeat a single frame n times → video frames list."""
+    return [frame.copy() for _ in range(n)]
 
 PID = "M-116"
 TASK_NAME = "rimonedl_disc_cup_seg"
