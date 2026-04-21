@@ -43,34 +43,20 @@ PROMPT = (
 
 
 def find_pairs(root: Path):
-    """Find (image_path, mask_path) pairs across train/test and normal/glaucoma splits."""
+    """Find (image, mask) pairs by matching basename in images/ vs segmentations/.
+    Layout: data/images/RIM-ONE_DL_images/.../<file>.png
+            data/segmentations/RIM-ONE_DL_reference_segmentations/.../<file>.png
+    """
+    img_files = list(root.rglob("images/**/*.png"))
+    seg_files = list(root.rglob("segmentations/**/*.png"))
+    seg_by_name = {p.name: p for p in seg_files}
     pairs = []
-    img_root = root / "images"
-    seg_root = root / "segmentations"
-    if not img_root.exists():
-        # Some layouts put things under rim-one-dl-master/ or similar
-        for candidate in root.rglob("*.png"):
-            if "segmentation" in str(candidate).lower() or "mask" in str(candidate).lower():
-                continue
-            # Attempt matching mask under the same relative path under segmentations/
-            rel = candidate.relative_to(root)
-            mask = seg_root / rel if seg_root.exists() else None
-            if mask and mask.exists():
-                pairs.append((candidate, mask))
-        return pairs
-
-    for img_path in sorted(img_root.rglob("*.png")):
-        # Mirror the path under segmentations/
-        rel = img_path.relative_to(img_root)
-        mask_path = seg_root / rel
-        if not mask_path.exists():
-            # Try with .jpg → .png swaps or variant naming
-            alt = seg_root / rel.with_suffix(".png")
-            if alt.exists():
-                mask_path = alt
-            else:
-                continue
-        pairs.append((img_path, mask_path))
+    for img in sorted(img_files):
+        if "license" in img.name.lower():
+            continue
+        mask = seg_by_name.get(img.name)
+        if mask:
+            pairs.append((img, mask))
     return pairs
 
 
