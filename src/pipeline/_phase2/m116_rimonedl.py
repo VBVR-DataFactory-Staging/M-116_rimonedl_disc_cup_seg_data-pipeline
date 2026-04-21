@@ -43,17 +43,20 @@ PROMPT = (
 
 
 def find_pairs(root: Path):
-    """Find (image, mask) pairs by matching basename in images/ vs segmentations/.
-    Layout: data/images/RIM-ONE_DL_images/.../<file>.png
-            data/segmentations/RIM-ONE_DL_reference_segmentations/.../<file>.png
-    """
-    img_files = list(root.rglob("images/**/*.png"))
-    seg_files = list(root.rglob("segmentations/**/*.png"))
-    seg_by_name = {p.name: p for p in seg_files}
-    pairs = []
-    for img in sorted(img_files):
-        if "license" in img.name.lower():
+    """Walk all .png files. Split by parent path containing 'images' vs 'segmentation'."""
+    all_pngs = list(root.rglob("*.png"))
+    imgs, segs = [], []
+    for p in all_pngs:
+        pstr = str(p).lower()
+        if "license" in p.name.lower():
             continue
+        if "/segmentation" in pstr or "reference_segmentation" in pstr:
+            segs.append(p)
+        elif "/images/" in pstr or "rim-one_dl_images" in pstr:
+            imgs.append(p)
+    seg_by_name = {p.name: p for p in segs}
+    pairs = []
+    for img in sorted(imgs):
         mask = seg_by_name.get(img.name)
         if mask:
             pairs.append((img, mask))
